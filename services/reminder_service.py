@@ -1,0 +1,73 @@
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.date import DateTrigger
+from datetime import datetime, timedelta
+from services.user_service import UserService
+from services.google_calendar import GoogleCalendarClient
+from aiogram import Bot
+import pytz
+import sqlalchemy as sa
+from sqlalchemy.ext.asyncio.session import AsyncSession
+from database.models import EventModel
+from services.utils import format_duration
+
+
+class ReminderService:
+    """
+    Класс для управления напоминаниями.
+    """
+
+    def __init__(self, scheduler: AsyncIOScheduler, bot: Bot, session: AsyncSession):
+        self.scheduler = scheduler
+        self.bot = bot
+        self.session = session
+
+    async def schedule_reminders(self, event_id: int, start: datetime, reminder_times: list, user_id: int):
+        """
+        Планирует напоминания для события.
+        """
+        scheduled_jobs = []
+
+        for reminder_minutes in reminder_times:
+            reminder_time = start - timedelta(minutes=reminder_minutes)
+            if reminder_time < datetime.now(pytz.timezone('Europe/Moscow')):
+                continue
+
+            job = self.scheduler.add_job(
+                self.send_reminder,
+                DateTrigger(run_date=reminder_time),
+                args=[event_id, reminder_minutes, user_id]
+            )
+
+            scheduled_jobs.append(job)
+        print(scheduled_jobs)
+        return scheduled_jobs
+
+    async def send_reminder(self, event_id: int, minutes_left: int, user_id: int):
+        """
+        Отправляет напоминание пользователю.
+        """
+        result = await self.session.execute(
+            sa.select(EventModel).where(EventModel.id == event_id, EventModel.user_id == user_id))
+        event = result.scalar_one_or_none()
+
+        if not event or not event.is_active:
+            return
+
+        token = await UserService.get_token(user_id=user_id, session=self.session)
+        google_event = GoogleCalendarClient().get_event(refresh_token=token, event_id=event.gcal_id)
+
+        if not google_event:
+            return
+
+        event_start_time = datetime.strftime(event.start, "%H:%M")
+        event_end_time = datetime.strftime(event.end, "%H:%M")
+
+        duration_str = format_duration((event.end - event.start).seconds)
+
+        message = f"""<b>🔔 {event.summary} через {minutes_left} минут</b>
+
+<blockquote>С {event_start_time} до {event_end_time}
+Продолжительность: ⌛️ <b>{duration_str}</b></blockquote>
+"""
+
+        await self.bot.send_message(chat_id=user_id, text=message, parse_mode='html')
