@@ -9,6 +9,7 @@ import sqlalchemy as sa
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from database.models import EventModel
 from services.utils import format_duration
+from typing import Iterable
 
 
 class ReminderService:
@@ -21,26 +22,42 @@ class ReminderService:
         self.bot = bot
         self.session = session
 
-    async def schedule_reminders(self, event_id: int, start: datetime, reminder_times: list, user_id: int):
+    async def schedule_reminders(self,
+                                 event_id: int,
+                                 start: datetime,
+                                 before_start: Iterable[int],
+                                 after_now: Iterable[int],
+                                 user_id: int):
         """
         Планирует напоминания для события.
         """
-        scheduled_jobs = []
+        scheduled = []
+        tz = pytz.timezone('Europe/Moscow')
+        now = datetime.now(tz)
 
-        for reminder_minutes in reminder_times:
-            reminder_time = start - timedelta(minutes=reminder_minutes)
-            if reminder_time < datetime.now(pytz.timezone('Europe/Moscow')):
-                continue
+        # ДО начала события
+        for m in sorted(set(int(x) for x in before_start if int(x) >= 0)):
+            run_at = start - timedelta(minutes=m)
+            if run_at > now:
+                job = self.scheduler.add_job(
+                    self.send_reminder,
+                    DateTrigger(run_date=run_at),
+                    args=[event_id, f"за {m} мин. до начала", user_id]  # <— передаём ярлык
+                )
+                scheduled.append(job)
 
+        # ОТ сейчас
+        for m in sorted(set(int(x) for x in after_now if int(x) >= 0)):
+            run_at = now + timedelta(minutes=m)
             job = self.scheduler.add_job(
                 self.send_reminder,
-                DateTrigger(run_date=reminder_time),
-                args=[event_id, reminder_minutes, user_id]
+                DateTrigger(run_date=run_at),
+                args=[event_id, f"через {m} мин.", user_id]  # <— передаём ярлык
             )
+            scheduled.append(job)
 
-            scheduled_jobs.append(job)
-        print(scheduled_jobs)
-        return scheduled_jobs
+        return scheduled
+
 
     async def send_reminder(self, event_id: int, minutes_left: int, user_id: int):
         """

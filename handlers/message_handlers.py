@@ -12,7 +12,7 @@ from services import utils
 from services.ai_service import AiService
 from services.event_service import Event
 from states import EventStates
-from services.utils import humanize_reminders
+from services.utils import join_humanized
 
 message_router = Router()
 
@@ -86,8 +86,19 @@ async def answer_chat(message: types.Message, session: AsyncSession, scheduler: 
     else:
         duration_string = f'С {event_start_time} до {event_end_time}'
 
-    reminders = (details.get('reminders') or [30, 5, 0])
-    reminders_text = humanize_reminders(reminders)
+    reminders_obj = details.get('reminders') or {}
+    before = reminders_obj.get('before_start') or [30, 5, 0]
+    after = reminders_obj.get('after_now') or []
+
+    before_text = join_humanized(before)
+    after_text = join_humanized(after)
+
+    if before and after:
+        remind_text = f"🧠 Напомню: через {after_text}, а также за {before_text} до начала."
+    elif after:
+        remind_text = f"🧠 Напомню через {after_text}."
+    else:
+        remind_text = f"🧠 Напомню за {before_text} до начала."
 
     message_text = f'''🗓 Запланировал новое событие на {event_start_date}:
 
@@ -96,6 +107,6 @@ async def answer_chat(message: types.Message, session: AsyncSession, scheduler: 
 {duration_string}
 Продолжительность: ⌛️ <b>{duration}</b></blockquote>
 
-🧠 Напомню {reminders_text}.'''
+🧠 Напомню {remind_text}.'''
 
     await msg.edit_text(message_text, reply_markup=kbd.as_markup(), parse_mode='HTML')

@@ -6,6 +6,7 @@ import dotenv
 from openai import OpenAI
 
 import config
+from utils import norm_list
 
 dotenv.load_dotenv()
 
@@ -66,13 +67,8 @@ class AiService:
             if not summary or not start or not duration:
                 return False
 
-            if isinstance(reminders, int):
-                reminders = [reminders]
-            if not isinstance(reminders, list):
-                reminders = []
-            norm_reminders = sorted({int(x) for x in reminders
-                                     if (isinstance(x, (int, str)) and str(x).lstrip("-").isdigit() and int(x) >= 0)})
-
+            before_start = norm_list((reminders or {}).get("before_start", []))
+            after_now = norm_list((reminders or {}).get("after_now", []))
 
             start_dt = datetime.strptime(start, '%Y-%m-%dT%H:%M:%S')
             end_dt = start_dt + timedelta(minutes=int(duration))
@@ -82,7 +78,10 @@ class AiService:
                 "start": start,
                 "end": end_dt.isoformat(),
                 "duration": duration,
-                "reminders": norm_reminders,
+                "reminders": {
+                    "before_start": before_start,
+                    "after_now": after_now
+                }
             }
 
         except json.decoder.JSONDecodeError:

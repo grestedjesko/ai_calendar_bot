@@ -13,8 +13,8 @@ class Event:
     Класс для создания и управления событием.
     """
 
-    def __init__(self, user_id: int, summary: str, start: datetime, end: datetime,  reminders: list, session: AsyncSession,
-                 scheduler: AsyncIOScheduler, bot: Bot):
+    def __init__(self, user_id: int, summary: str, start: datetime, end: datetime, session: AsyncSession,
+                 scheduler: AsyncIOScheduler, bot: Bot, reminders: dict | None = None):
         self.user_id = user_id
         self.summary = summary
         self.start = start
@@ -25,7 +25,9 @@ class Event:
         end_dt = datetime.strptime(end, '%Y-%m-%dT%H:%M:%S')
         self.end = timezone.localize(end_dt)
 
-        self.reminders = reminders
+        r = reminders or {}
+        self.reminders_before = sorted({int(x) for x in r.get("before_start", []) if int(x) >= 0})
+        self.reminders_after = sorted({int(x) for x in r.get("after_now", []) if int(x) >= 0})
 
         self.session = session
         self.scheduler = scheduler
@@ -50,12 +52,16 @@ class Event:
         event_id = await self.event_repository.save_event(self.session, self.user_id,
                                                           self.summary, self.start,
                                                           self.end, gcal_id)
+        before = self.reminders_before or [30, 5, 0]
+        after = self.reminders_after or []
 
-        # Планирование напоминаний
         await self.reminder_service.schedule_reminders(
-            event_id, self.start, reminder_times=(self.reminders or [30, 5, 0]), user_id=self.user_id
+            event_id=event_id,
+            start=self.start,
+            before_start=before,
+            after_now=after,
+            user_id=self.user_id
         )
-
         return event_id, link
 
     @staticmethod
