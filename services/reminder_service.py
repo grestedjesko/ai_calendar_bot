@@ -81,7 +81,7 @@ class ReminderService:
 
         duration_str = format_duration((event.end - event.start).seconds)
 
-        message = f"""<b>🔔 {event.summary} через {minutes_left} минут</b>
+        message = f"""<b>🔔 {event.summary}</b>
 
 <blockquote>С {event_start_time} до {event_end_time}
 Продолжительность: ⌛️ <b>{duration_str}</b></blockquote>
