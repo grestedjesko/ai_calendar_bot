@@ -52,20 +52,15 @@ class Event:
         event_id = await self.event_repository.save_event(self.session, self.user_id,
                                                           self.summary, self.start,
                                                           self.end, gcal_id)
-        after = self.reminders_after or []
 
-        if self.reminders_before:
-            before = self.reminders_before
-        elif self.reminders_after:
-            before = []
-        else:
-            before = []
+        if not self.reminders_before and not self.reminders_after:
+            self.reminders_before = [30, 5, 0]
 
         await self.reminder_service.schedule_reminders(
             event_id=event_id,
             start=self.start,
-            before_start=before,
-            after_now=after,
+            before_start=self.reminders_before,
+            after_now=self.reminders_after,
             user_id=self.user_id
         )
         return event_id, link

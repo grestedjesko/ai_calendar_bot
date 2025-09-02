@@ -86,9 +86,8 @@ async def answer_chat(message: types.Message, session: AsyncSession, scheduler: 
     else:
         duration_string = f'С {event_start_time} до {event_end_time}'
 
-    reminders_obj = details.get('reminders') or {}
-    before = reminders_obj.get('before_start') or [30, 5, 0]
-    after = reminders_obj.get('after_now') or []
+    before = event.reminders_before
+    after = event.reminders_after
 
     before_text = join_humanized(before)
     after_text = join_humanized(after)
