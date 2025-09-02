@@ -77,7 +77,7 @@ class ReminderService:
             return
 
         event_start_time = datetime.strftime(event.start, "%H:%M")
-        event_start_date = datetime.strptime(event.start, "%d.%m.%Y")
+        event_start_date = datetime.strftime(event.start, "%d.%m.%Y")
 
         event_end_time = datetime.strftime(event.end, "%H:%M")
 
