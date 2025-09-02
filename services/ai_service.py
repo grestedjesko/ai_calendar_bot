@@ -51,22 +51,28 @@ class AiService:
             model=os.getenv("MODEL"),
             temperature=0.1
         )
-
         response_content = chat_result.choices[0].message.content
 
         try:
             response_content = json.loads(response_content)
-
             if not response_content:
                 return False
-            print(response_content)
 
             summary = response_content.get("summary")
             start = response_content.get("start")
             duration = response_content.get("duration")
+            reminders = response_content.get("reminders", [])
 
             if not summary or not start or not duration:
                 return False
+
+            if isinstance(reminders, int):
+                reminders = [reminders]
+            if not isinstance(reminders, list):
+                reminders = []
+            norm_reminders = sorted({int(x) for x in reminders
+                                     if (isinstance(x, (int, str)) and str(x).lstrip("-").isdigit() and int(x) >= 0)})
+
 
             start_dt = datetime.strptime(start, '%Y-%m-%dT%H:%M:%S')
             end_dt = start_dt + timedelta(minutes=int(duration))
@@ -76,6 +82,7 @@ class AiService:
                 "start": start,
                 "end": end_dt.isoformat(),
                 "duration": duration,
+                "reminders": norm_reminders,
             }
 
         except json.decoder.JSONDecodeError:

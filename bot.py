@@ -76,6 +76,7 @@ async def bot_webhook(request: Request):
         logger.error(f"Error processing update: {e}")
     return {"ok": True}
 
+
 @app.get("/auth/callback")
 async def oauth_callback(request: Request, state, code):
     user_id = state

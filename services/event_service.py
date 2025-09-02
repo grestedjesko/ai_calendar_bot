@@ -50,7 +50,9 @@ class Event:
                                                           self.end, gcal_id)
 
         # Планирование напоминаний
-        await self.reminder_service.schedule_reminders(event_id, self.start, reminder_times=[30, 5, 0], user_id=self.user_id)
+        await self.reminder_service.schedule_reminders(
+            event_id, self.start, reminder_times=(self.reminders or [30, 5, 0]), user_id=self.user_id
+        )
 
         return event_id, link
 
