@@ -77,13 +77,17 @@ class ReminderService:
             return
 
         event_start_time = datetime.strftime(event.start, "%H:%M")
+        event_start_date = datetime.strptime(event.start, "%d.%m.%Y")
+
         event_end_time = datetime.strftime(event.end, "%H:%M")
 
-        duration_str = format_duration((event.end - event.start).seconds)
+        duration_str = format_duration((event.end - event.start).minutes)
 
-        message = f"""<b>🔔 {event.summary}</b>
+        message = f"""<b>🔔 {event.summary}</b> 
 
-<blockquote>С {event_start_time} до {event_end_time}
+<blockquote>
+{event_start_date}
+С {event_start_time} до {event_end_time}
 Продолжительность: ⌛️ <b>{duration_str}</b></blockquote>
 """
 
