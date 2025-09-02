@@ -1,7 +1,6 @@
 def format_duration(duration: int) -> str:
-    total_minutes = int(duration // 60)
-    hours = total_minutes // 60
-    minutes = total_minutes % 60
+    hours = int(duration // 60)
+    minutes = duration % 60
     result = []
 
     if hours > 0:

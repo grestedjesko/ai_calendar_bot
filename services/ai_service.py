@@ -53,7 +53,7 @@ class AiService:
             temperature=0.1
         )
         response_content = chat_result.choices[0].message.content
-
+        print(response_content)
         try:
             response_content = json.loads(response_content)
             if not response_content:
