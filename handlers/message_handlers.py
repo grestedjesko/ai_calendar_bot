@@ -12,6 +12,7 @@ from services import utils
 from services.ai_service import AiService
 from services.event_service import Event
 from states import EventStates
+from services.utils import humanize_reminders
 
 message_router = Router()
 
@@ -85,6 +86,9 @@ async def answer_chat(message: types.Message, session: AsyncSession, scheduler: 
     else:
         duration_string = f'С {event_start_time} до {event_end_time}'
 
+    reminders = (details.get('reminders') or [30, 5, 0])
+    reminders_text = humanize_reminders(reminders)
+
     message_text = f'''🗓 Запланировал новое событие на {event_start_date}:
 
 <blockquote><b>{event_summary}</b> 
@@ -92,6 +96,6 @@ async def answer_chat(message: types.Message, session: AsyncSession, scheduler: 
 {duration_string}
 Продолжительность: ⌛️ <b>{duration}</b></blockquote>
 
-🧠 Напомню вам за 30 минут и за 5 минут до начала.'''
+🧠 Напомню {reminders_text}.'''
 
     await msg.edit_text(message_text, reply_markup=kbd.as_markup(), parse_mode='HTML')
