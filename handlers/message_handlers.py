@@ -107,6 +107,6 @@ async def answer_chat(message: types.Message, session: AsyncSession, scheduler: 
 {duration_string}
 Продолжительность: ⌛️ <b>{duration}</b></blockquote>
 
-🧠 Напомню {remind_text}.'''
+{remind_text}.'''
 
     await msg.edit_text(message_text, reply_markup=kbd.as_markup(), parse_mode='HTML')
