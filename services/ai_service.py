@@ -6,7 +6,7 @@ import dotenv
 from openai import OpenAI
 
 import config
-from utils import norm_list
+from services.utils import norm_list
 
 dotenv.load_dotenv()
 
