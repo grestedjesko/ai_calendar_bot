@@ -13,7 +13,7 @@ class Event:
     Класс для создания и управления событием.
     """
 
-    def __init__(self, user_id: int, summary: str, start: datetime, end: datetime, session: AsyncSession,
+    def __init__(self, user_id: int, summary: str, start: datetime, end: datetime,  reminders: list, session: AsyncSession,
                  scheduler: AsyncIOScheduler, bot: Bot):
         self.user_id = user_id
         self.summary = summary
@@ -24,6 +24,8 @@ class Event:
         self.start = timezone.localize(start_dt)
         end_dt = datetime.strptime(end, '%Y-%m-%dT%H:%M:%S')
         self.end = timezone.localize(end_dt)
+
+        self.reminders = reminders
 
         self.session = session
         self.scheduler = scheduler

@@ -60,6 +60,7 @@ async def answer_chat(message: types.Message, session: AsyncSession, scheduler: 
                   summary=details.get('summary'),
                   start=details.get('start'),
                   end=details.get('end'),
+                  reminders=details.get('reminders'),
                   session=session,
                   scheduler=scheduler,
                   bot=message.bot)
